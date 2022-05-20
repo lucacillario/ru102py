@@ -12,6 +12,7 @@ To start and run this application, you will need:
 
 * [Python 3.8](https://www.python.org/downloads/) (**Note**: It must be version 3.8)
 * Access to a local or remote installation of [Redis](https://redis.io/download) version 5 or newer
+  * `docker run -it -d -p 6379:6379 --rm --name redis-ru102py redis`
 * Your Redis installation should have the RedisTimeSeries module installed. You can find the installation instructions at: https://oss.redis.com/redistimeseries/#setup
 
 **Note**: If you don't have Redis installed but do have Docker or Podman and want to get started quickly,

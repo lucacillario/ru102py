@@ -54,7 +54,7 @@ class SiteGeoDaoRedis(SiteGeoDaoBase, RedisDaoBase):
 
     def _find_by_geo_with_capacity(self, query: GeoQuery, **kwargs) -> Set[Site]:
         # START Challenge #5
-        # Your task: Get the sites matching the GEO query.
+        site_ids = [site.id for site in self._find_by_geo(query)]
         # END Challenge #5
 
         p = self.redis.pipeline(transaction=False)
@@ -70,8 +70,9 @@ class SiteGeoDaoRedis(SiteGeoDaoBase, RedisDaoBase):
 
         # Delete the next lines after you've populated a `site_ids`
         # and `scores` variable.
-        site_ids: List[str] = []
-        scores: Dict[str, float] = {}
+        for site_id in site_ids:
+            p.zscore(self.key_schema.capacity_ranking_key(), site_id)
+        scores = dict(zip(site_ids, p.execute()))
 
         for site_id in site_ids:
             if scores[site_id] and scores[site_id] > CAPACITY_THRESHOLD:
@@ -89,11 +90,9 @@ class SiteGeoDaoRedis(SiteGeoDaoBase, RedisDaoBase):
     def find_all(self, **kwargs) -> Set[Site]:
         """Find all Sites."""
         site_ids = self.redis.zrange(self.key_schema.site_geo_key(), 0, -1)
-        sites = set()
-
+        pipe = self.redis.pipeline(False)
         for site_id in site_ids:
             key = self.key_schema.site_hash_key(site_id)
-            site_hash = self.redis.hgetall(key)
-            sites.add(FlatSiteSchema().load(site_hash))
+            pipe.hgetall(key)
 
-        return sites
+        return {FlatSiteSchema().load(site_hash) for site_hash in pipe.execute()}
